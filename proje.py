@@ -13,8 +13,8 @@ st.set_page_config(page_title="Airline Satisfaction Dashboard", layout="wide")
 st.title("✈️ Airline Passenger Satisfaction ML Dashboard")
 
 # DATA
-train_data = pd.read_csv(r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\data\train.csv")
-test_data  = pd.read_csv(r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\data\test.csv")
+train_data=pd.read_csv(r"data/train.csv")
+test_data=pd.read_csv(r"data/test.csv")
 
 all_data = pd.concat((
     train_data.loc[:, "Gender":"satisfaction"],
@@ -42,12 +42,12 @@ x_Train, x_Test, y_Train, y_Test = train_test_split(
 try:
     model_configs = {}
     model_files = {
-        "Logistic Regression":  r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_lg.pkl",
-        "Genetik":              r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_genetic.pkl",
-        "Yapay Sinir Ağları":   r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_ysa.pkl",
-        "Decision Tree":        r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_decision_trees_gini.pkl",
-        "Gaussian NB":          r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_gnb.pkl",
-        "Bernoulli NB":         r"C:\Users\yigit\OneDrive\Masaüstü\yapayzeka\model_brn.pkl",
+        "Logistic Regression":  r"model_lg.pkl",
+        "Genetik":              r"model_genetic.pkl",
+        "Yapay Sinir Ağları":   r"model_ysa.pkl",
+        "Decision Tree":        r"C:model_decision_trees_gini.pkl",
+        "Gaussian NB":          r"model_gnb.pkl",
+        "Bernoulli NB":         r"model_brn.pkl",
     }
 
     for name, path in model_files.items():
@@ -105,6 +105,11 @@ with col3:
     inflight_svc    = st.slider("Inflight Service", 0, 5, 3)
 
 # Encode kategorik değerler (eğitimde kullanılan sırayla aynı)
+# LabelEncoder alfabetik sırayla encode eder:
+# Gender:        Female=0, Male=1
+# Customer Type: Loyal Customer=0, disloyal Customer=1
+# Type of Travel: Business travel=0, Personal Travel=1
+# Class:         Business=0, Eco=1, Eco Plus=2
 gender_enc        = 1 if gender == "Male" else 0
 customer_type_enc = 0 if customer_type == "Loyal Customer" else 1
 travel_type_enc   = 1 if travel_type == "Personal Travel" else 0
@@ -141,10 +146,19 @@ if st.button("🚀 Predict"):
     X_input  = input_df[features]           # modelin kullandığı feature'lar
     X_scaled = scaler.transform(X_input)    # modelin kendi scaler'ı — fit() YOK
 
+    # BernoulliNB binary input bekler → 0.5 eşiğiyle binarize et
+    from sklearn.naive_bayes import BernoulliNB
+    if isinstance(model, BernoulliNB):
+        X_scaled = (X_scaled > 0.5).astype(int)
+
     pred = model.predict(X_scaled)
 
-    if pred.ndim > 1 or pred.dtype != int:
-        pred = (pred > 0.5).astype(int).flatten()
+    # Keras sigmoid çıktısı: shape (n,1) float → eşik uygula
+    if pred.ndim > 1:
+        pred = (pred.flatten() > 0.5).astype(int)
+    # sklearn bazı modeller float döner (predict_proba değil predict ama yine de)
+    elif pred.dtype in [np.float32, np.float64]:
+        pred = (pred > 0.5).astype(int)
 
     st.subheader("🎯 Result")
     if pred[0] == 1:
@@ -165,9 +179,15 @@ for name, config in model_configs.items():
 
         X_test_scaled = sc.transform(x_Test[feats])
 
+        from sklearn.naive_bayes import BernoulliNB
+        if isinstance(m, BernoulliNB):
+            X_test_scaled = (X_test_scaled > 0.5).astype(int)
+
         p = m.predict(X_test_scaled)
-        if p.ndim > 1 or p.dtype != int:
-            p = (p > 0.5).astype(int).flatten()
+        if p.ndim > 1:
+            p = (p.flatten() > 0.5).astype(int)
+        elif p.dtype in [np.float32, np.float64]:
+            p = (p > 0.5).astype(int)
 
         model_names.append(name)
         accuracies.append(accuracy_score(y_Test, p))
@@ -198,11 +218,15 @@ with col2:
 st.subheader("📉 Confusion Matrix")
 
 try:
+    from sklearn.naive_bayes import BernoulliNB
     X_test_scaled = scaler.transform(x_Test[features])
+    if isinstance(model, BernoulliNB):
+        X_test_scaled = (X_test_scaled > 0.5).astype(int)
     preds = model.predict(X_test_scaled)
-
-    if preds.ndim > 1 or preds.dtype != int:
-        preds = (preds > 0.5).astype(int).flatten()
+    if preds.ndim > 1:
+        preds = (preds.flatten() > 0.5).astype(int)
+    elif preds.dtype in [np.float32, np.float64]:
+        preds = (preds > 0.5).astype(int)
 
     cm = confusion_matrix(y_Test, preds)
     fig3, ax3 = plt.subplots()
@@ -241,5 +265,3 @@ if importance is not None:
     ax4.barh(features, importance)
     ax4.set_title("Feature Importance")
     st.pyplot(fig4)
-
-
