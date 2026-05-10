@@ -45,7 +45,7 @@ try:
         "Logistic Regression":  r"model_lg.pkl",
         "Genetik":              r"model_genetic.pkl",
         "Yapay Sinir Ağları":   r"model_ysa.pkl",
-        "Decision Tree":        r"C:model_decision_trees_gini.pkl",
+        "Decision Tree":        r"model_decision_trees_gini.pkl",
         "Gaussian NB":          r"model_gnb.pkl",
         "Bernoulli NB":         r"model_brn.pkl",
     }
