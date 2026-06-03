@@ -22,3 +22,7 @@ Bu proje, havayolu yolcularının uçuş deneyimlerini analiz ederek memnuniyet 
 3. Uygulamayı başlatın: `streamlit run proje.py`
 
 ---
+22010708052 Yiğit Emre Yörük
+23010708038 Akif Enes Sığırcı
+22010708050 İbrahim Uslu
+22010708023 Mustafa Kağan Eren
